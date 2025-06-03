@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "start": "vite",
+    "dev": "vite",
     "build": "node --max-old-space-size=4096 node_modules/vite/bin/vite.js build",
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\"",
@@ -22,6 +23,7 @@
     "bootstrap": "^5.3.3",
     "chance": "^1.1.11",
     "d3": "^7.9.0",
+    "datta-able-react-hook-reactstrap-js": "file:",
     "formik": "^2.4.5",
     "jquery": "^3.7.1",
     "process": "^0.11.10",
