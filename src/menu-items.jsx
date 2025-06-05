@@ -47,6 +47,13 @@ const menuItems = {
           type: 'item',
           icon: 'feather icon-star',
           url: '/app/dashboard/exchange'
+        },
+        {
+          id: 'call-center-agents',
+          title: 'Call Center Agents',
+          type: 'item',
+          icon: 'feather icon-user-check',
+          url: '/app/dashboard/call-center-agents'
         }
       ]
     },

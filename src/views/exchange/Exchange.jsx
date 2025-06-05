@@ -1,47 +1,58 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table } from 'react-bootstrap';
+import axios from 'axios';
 
-const BootstrapTable = () => {
+const ExchangeRates = () => {
+  const [rates, setRates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchRates = async () => {
+      try {
+        const response = await axios.get('http://localhost:8080/api/v1/exchange-rates?searchString=""&date=""');
+        setRates(response.data);
+        setError(null);
+      } catch (err) {
+        setError('Failed to fetch exchange rates');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRates();
+  }, []);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+
   return (
     <React.Fragment>
       <Row>
         <Col>
           <Card>
             <Card.Header>
-              <Card.Title as="h5">Basic Table</Card.Title>
-              <span className="d-block m-t-5">
-                use bootstrap <code>Table</code> component
-              </span>
+              <Card.Title as="h5">Exchange Rates</Card.Title>
             </Card.Header>
             <Card.Body>
               <Table responsive>
                 <thead>
                   <tr>
-                    <th>#</th>
-                    <th>First Name</th>
-                    <th>Last Name</th>
-                    <th>Username</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Buy MMK</th>
+                    <th>Sell MMK</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <th scope="row">1</th>
-                    <td>Mark</td>
-                    <td>Otto</td>
-                    <td>@mdo</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">2</th>
-                    <td>Jacob</td>
-                    <td>Thornton</td>
-                    <td>@fat</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">3</th>
-                    <td>Larry</td>
-                    <td>the Bird</td>
-                    <td>@twitter</td>
-                  </tr>
+                  {rates.map((rate, index) => (
+                    <tr key={index}>
+                      <td>{rate.date}</td>
+                      <td>{rate.time}</td>
+                      <td>{rate.buyMMK}</td>
+                      <td>{rate.sellMMK}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </Table>
             </Card.Body>
@@ -52,4 +63,4 @@ const BootstrapTable = () => {
   );
 };
 
-export default BootstrapTable;
+export default ExchangeRates;

@@ -82,6 +82,11 @@ const routes = [
       },
       {
         exact: 'true',
+        path: '/app/dashboard/call-center-agents',
+        element: lazy(() => import('./views/agents/CallCenterAgentList'))
+      },
+      {
+        exact: 'true',
         path: '/basic/button',
         element: lazy(() => import('./views/ui-elements/basic/BasicButton'))
       },
