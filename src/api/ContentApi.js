@@ -19,5 +19,5 @@ export const fetchContents = async (contentType = 'INF', searchString = '', page
     headers
   });
 
-  return response.data.content || [];
+  return response.data || [];
 };

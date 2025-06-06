@@ -10,10 +10,10 @@ export const fetchUsers = async (page = 0, size = 5, searchString = '') => {
     `${API_BASE_URL}api/v1/user/paginated?searchString=${searchString}&agentName=&page=${page}&size=${size}`,
     {
       headers: {
-        Authorization: `Bearer ${token}`,
-      },
+        Authorization: `Bearer ${token}`
+      }
     }
   );
 
-  return response.data.users || [];
+  return response.data || [];
 };

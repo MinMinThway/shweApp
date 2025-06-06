@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Card, Table, Button, Form } from 'react-bootstrap';
+import { Row, Col, Card, Table, Button, Form, Pagination } from 'react-bootstrap';
 import { fetchUsers } from '../../api/userApi';
 
 const BootstrapTable = () => {
@@ -8,15 +8,24 @@ const BootstrapTable = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const loadUsers = async (search = '') => {
-    // setLoading(true);
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const pageSize = 5;
+
+  const loadUsers = async (page = 0, search = '') => {
     try {
-      const usersData = await fetchUsers(0, 5, search); // Updated to include search
-      setUsers(usersData);
+      const data = await fetchUsers(page, pageSize, search);
+      setUsers(data.users || []);
+      setCurrentPage(data.currentPage || 0);
+      setTotalPages(data.totalPages || 0);
       setError(null);
     } catch (err) {
       console.error(err);
       setError('Failed to fetch users');
+      setUsers([]);
+      setCurrentPage(0);
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }
@@ -24,13 +33,20 @@ const BootstrapTable = () => {
 
   useEffect(() => {
     setLoading(true);
-    loadUsers();
-  }, []);
+    loadUsers(currentPage, searchString);
+  }, []); // load first page on mount
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchString(value);
-    loadUsers(value); // Live search
+    // Reset to page 0 on search
+    loadUsers(0, value);
+  };
+
+  const handlePageChange = (page) => {
+    if (page >= 0 && page < totalPages) {
+      loadUsers(page, searchString);
+    }
   };
 
   if (loading) return <div>Loading...</div>;
@@ -42,7 +58,9 @@ const BootstrapTable = () => {
         <Col>
           <Card>
             <Card.Header className="d-flex align-items-center justify-content-between">
-              <Card.Title as="h5" className="mb-0">User Table</Card.Title>
+              <Card.Title as="h5" className="mb-0">
+                User Table
+              </Card.Title>
               <Form.Control
                 type="text"
                 placeholder="Search by username or phone"
@@ -62,29 +80,42 @@ const BootstrapTable = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user, index) => (
-                    <tr key={index}>
-                      <td>{user.userName}</td>
-                      <td>{user.phoneNumber}</td>
-                      <td>
-                        {user.image ? (
-                          <img src={user.image} alt="User" width={40} />
-                        ) : (
-                          <span>No image</span>
-                        )}
-                      </td>
-                      <td>
-                        <Button variant="info" size="sm" className="me-2">
-                          <i className="feather icon-edit" /> Edit
-                        </Button>
-                        <Button variant="danger" size="sm">
-                          <i className="feather icon-trash-2" /> Delete
-                        </Button>
+                  {users.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" className="text-center">
+                        No users found
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    users.map((user, index) => (
+                      <tr key={index}>
+                        <td>{user.userName}</td>
+                        <td>{user.phoneNumber}</td>
+                        <td>{user.image ? <img src={user.image} alt="User" width={40} /> : <span>No image</span>}</td>
+                        <td>
+                          <Button variant="info" size="sm" className="me-2">
+                            <i className="feather icon-edit" /> Edit
+                          </Button>
+                          <Button variant="danger" size="sm">
+                            <i className="feather icon-trash-2" /> Delete
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </Table>
+
+              {/* Pagination controls */}
+              <Pagination>
+                <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 0} />
+                {[...Array(totalPages)].map((_, i) => (
+                  <Pagination.Item key={i} active={i === currentPage} onClick={() => handlePageChange(i)}>
+                    {i + 1}
+                  </Pagination.Item>
+                ))}
+                <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages - 1} />
+              </Pagination>
             </Card.Body>
           </Card>
         </Col>
