@@ -12,7 +12,7 @@ const SamplePage = () => {
   useEffect(() => {
     const loadNews = async () => {
       try {
-        const data = await fetchContents('INF', '', 0, 10);
+        const data = await fetchContents('INF', '', 0, 5);
         setNews(data);
         setError(null);
       } catch (err) {
@@ -63,14 +63,14 @@ const SamplePage = () => {
                 <strong>Content Type:</strong> {item.contentType || 'N/A'}
               </div>
               <div className="mb-2">
-                <strong>Publish Date:</strong>{' '}
-                {item.publishDate ? new Date(item.publishDate).toLocaleDateString() : 'N/A'}
+                <strong>Publish Date:</strong> {item.publishDate ? new Date(item.publishDate).toLocaleDateString() : 'N/A'}
               </div>
               {item.imageUrls && item.imageUrls.length > 0 && (
                 <div className="mb-2">
                   <strong>Images:</strong>
                   <div className="mt-2">
                     {item.imageUrls.map((url, idx) => (
+                      // eslint-disable-next-line jsx-a11y/img-redundant-alt
                       <img
                         key={idx}
                         src={url}

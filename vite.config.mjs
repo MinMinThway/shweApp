@@ -14,10 +14,9 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: 'https://api.shweapps.com',
           changeOrigin: true,
-       
-          secure: true,
-        },
-      },
+          secure: true
+        }
+      }
     },
     preview: {
       port: PORT,
