@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Button } from 'react-bootstrap';
+import { Row, Col, Button, Spinner, Alert } from 'react-bootstrap';
 
 import Card from '../../components/Card/MainCard';
-import axios from 'axios';
+import { fetchContents } from '../../api/ContentApi';
 
 const SamplePage = () => {
-  const [news, SetNews] = useState([]);
+  const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchNews = async () => {
+    const loadNews = async () => {
       try {
-        const response = await axios.get('http://localhost:8080/api/contents/filter-content?searchString=travel&contentType=NEWS&page=0&size=10');
-        SetNews(response.data);
+        const data = await fetchContents('INF', '', 0, 10);
+        setNews(data);
         setError(null);
       } catch (err) {
         setError('Failed to fetch news');
@@ -22,47 +22,69 @@ const SamplePage = () => {
         setLoading(false);
       }
     };
-    fetchNews();
+    loadNews();
   }, []);
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Erros : {error}</div>
+  if (loading) {
+    return (
+      <div className="text-center mt-5">
+        <Spinner animation="border" variant="primary" />
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert variant="danger" className="mt-3">
+        Error: {error}
+      </Alert>
+    );
+  }
 
   return (
     <React.Fragment>
-      <Row>
-        <Button variant="primary w-25 m-10 float-end">Add User</Button>
+      <Row className="mb-3">
+        <Col className="text-end">
+          <Button variant="primary" className="w-25">
+            Add News
+          </Button>
+        </Col>
       </Row>
+
       <Row>
-        {news.map((newData, index) => {
-          <Card title={newData.title} isOption>
-            <div className="mb-3">
-              <strong>Body:</strong> {newData.body}
-            </div>
-            <div className="mb-3">
-              <strong>Content Type:</strong> {newData.contentType}
-            </div>
-            <div className="mb-3">
-              <strong>Publish Date:</strong> {newData.publishDate}
-            </div>
-            {newData.imageUrls && newData.imageUrls.length > 0 && (
-              <div className="mb-3">
-                <strong>Images:</strong>
-                <div className="mt-2">
-                  {newData.imageUrls.map((url, idx) => (
-                    <img
-                      key={idx}
-                      src={url}
-                      alt={`News ${index} image ${idx}`}
-                      className="img-fluid mb-2"
-                      style={{ maxWidth: '100%' }}
-                    />
-                  ))}
-                </div>
+        {news.map((item, index) => (
+          <Col key={index} md={6} lg={4} className="mb-4">
+            <Card title={item.title || 'No Title'} isOption>
+              <div className="mb-2">
+                <strong>Body:</strong> {item.body || 'N/A'}
               </div>
-            )}
-          </Card>
-        })}
+              <div className="mb-2">
+                <strong>Content Type:</strong> {item.contentType || 'N/A'}
+              </div>
+              <div className="mb-2">
+                <strong>Publish Date:</strong>{' '}
+                {item.publishDate ? new Date(item.publishDate).toLocaleDateString() : 'N/A'}
+              </div>
+              {item.imageUrls && item.imageUrls.length > 0 && (
+                <div className="mb-2">
+                  <strong>Images:</strong>
+                  <div className="mt-2">
+                    {item.imageUrls.map((url, idx) => (
+                      <img
+                        key={idx}
+                        src={url}
+                        alt={`News ${index} image ${idx}`}
+                        className="img-fluid mb-2 rounded"
+                        style={{ maxHeight: '200px', width: '100%', objectFit: 'cover' }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+          </Col>
+        ))}
       </Row>
     </React.Fragment>
   );

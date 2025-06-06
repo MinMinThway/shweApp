@@ -3,8 +3,29 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 
 import Loader from './components/Loader/Loader';
 import AdminLayout from './layouts/AdminLayout';
-
+import ProtectedRoute from './ProtectedRoute';
 import { BASE_URL } from './config/constant';
+
+const SignIn = lazy(() => import('./views/auth/signin/SignIn1'));
+const SignUp = lazy(() => import('./views/auth/signup/SignUp1'));
+const Dashboard = lazy(() => import('./views/dashboard'));
+const Users = lazy(() => import('./views/users/Users'));
+const News = lazy(() => import('./views/news/News'));
+const Artical = lazy(() => import('./views/artical/Artical'));
+const Service = lazy(() => import('./views/service/Service'));
+const Exchange = lazy(() => import('./views/exchange/Exchange'));
+const CallCenterAgentList = lazy(() => import('./views/agents/CallCenterAgentList'));
+const BasicButton = lazy(() => import('./views/ui-elements/basic/BasicButton'));
+const BasicBadges = lazy(() => import('./views/ui-elements/basic/BasicBadges'));
+const BasicBreadcrumb = lazy(() => import('./views/ui-elements/basic/BasicBreadcrumb'));
+const BasicCollapse = lazy(() => import('./views/ui-elements/basic/BasicCollapse'));
+const BasicTabsPills = lazy(() => import('./views/ui-elements/basic/BasicTabsPills'));
+const BasicTypography = lazy(() => import('./views/ui-elements/basic/BasicTypography'));
+const FormsElements = lazy(() => import('./views/forms/FormsElements'));
+const BootstrapTable = lazy(() => import('./views/tables/BootstrapTable'));
+const NVD3Chart = lazy(() => import('./views/charts/nvd3-chart'));
+const GoogleMaps = lazy(() => import('./views/maps/GoogleMaps'));
+const SamplePage = lazy(() => import('./views/extra/SamplePage'));
 
 export const renderRoutes = (routes = []) => (
   <Suspense fallback={<Loader />}>
@@ -20,7 +41,7 @@ export const renderRoutes = (routes = []) => (
             path={route.path}
             element={
               <Guard>
-                <Layout>{route.routes ? renderRoutes(route.routes) : <Element props={true} />}</Layout>
+                <Layout>{route.routes ? renderRoutes(route.routes) : <Element />}</Layout>
               </Guard>
             }
           />
@@ -32,119 +53,41 @@ export const renderRoutes = (routes = []) => (
 
 const routes = [
   {
-    exact: 'true',
     path: '/login',
-    element: lazy(() => import('./views/auth/signin/SignIn1'))
+    element: SignIn
   },
   {
-    exact: 'true',
     path: '/auth/signin-1',
-    element: lazy(() => import('./views/auth/signin/SignIn1'))
+    element: SignIn
   },
   {
-    exact: 'true',
     path: '/auth/signup-1',
-    element: lazy(() => import('./views/auth/signup/SignUp1'))
+    element: SignUp
   },
   {
     path: '*',
     layout: AdminLayout,
+    guard: ProtectedRoute,
     routes: [
-      {
-        exact: 'true',
-        path: '/app/dashboard/default',
-        element: lazy(() => import('./views/dashboard'))
-      },
-      {
-        exact: 'true',
-        path: '/app/dashboard/users',
-        element: lazy(() => import('./views/users/Users'))
-      },
-      {
-        exact: 'true',
-        path: '/app/dashboard/news',
-        element: lazy(() => import('./views/news/News'))
-      },
-      {
-        exact: 'true',
-        path: '/app/dashboard/artical',
-        element: lazy(() => import('./views/artical/Artical'))
-      },
-      {
-        exact: 'true',
-        path: '/app/dashboard/service',
-        element: lazy(() => import('./views/service/Service'))
-      },
-      {
-        exact: 'true',
-        path: '/app/dashboard/exchange',
-        element: lazy(() => import('./views/exchange/Exchange'))
-      },
-      {
-        exact: 'true',
-        path: '/app/dashboard/call-center-agents',
-        element: lazy(() => import('./views/agents/CallCenterAgentList'))
-      },
-      {
-        exact: 'true',
-        path: '/basic/button',
-        element: lazy(() => import('./views/ui-elements/basic/BasicButton'))
-      },
-      {
-        exact: 'true',
-        path: '/basic/badges',
-        element: lazy(() => import('./views/ui-elements/basic/BasicBadges'))
-      },
-      {
-        exact: 'true',
-        path: '/basic/breadcrumb-paging',
-        element: lazy(() => import('./views/ui-elements/basic/BasicBreadcrumb'))
-      },
-      {
-        exact: 'true',
-        path: '/basic/collapse',
-        element: lazy(() => import('./views/ui-elements/basic/BasicCollapse'))
-      },
-      {
-        exact: 'true',
-        path: '/basic/tabs-pills',
-        element: lazy(() => import('./views/ui-elements/basic/BasicTabsPills'))
-      },
-      {
-        exact: 'true',
-        path: '/basic/typography',
-        element: lazy(() => import('./views/ui-elements/basic/BasicTypography'))
-      },
-      {
-        exact: 'true',
-        path: '/forms/form-basic',
-        element: lazy(() => import('./views/forms/FormsElements'))
-      },
-      {
-        exact: 'true',
-        path: '/tables/bootstrap',
-        element: lazy(() => import('./views/tables/BootstrapTable'))
-      },
-      {
-        exact: 'true',
-        path: '/charts/nvd3',
-        element: lazy(() => import('./views/charts/nvd3-chart'))
-      },
-      {
-        exact: 'true',
-        path: '/maps/google-map',
-        element: lazy(() => import('./views/maps/GoogleMaps'))
-      },
-      {
-        exact: 'true',
-        path: '/sample-page',
-        element: lazy(() => import('./views/extra/SamplePage'))
-      },
-      {
-        path: '*',
-        exact: 'true',
-        element: () => <Navigate to={BASE_URL} />
-      }
+      { path: '/app/dashboard/default', element: Dashboard },
+      { path: '/app/dashboard/users', element: Users },
+      { path: '/app/dashboard/news', element: News },
+      { path: '/app/dashboard/artical', element: Artical },
+      { path: '/app/dashboard/service', element: Service },
+      { path: '/app/dashboard/exchange', element: Exchange },
+      { path: '/app/dashboard/call-center-agents', element: CallCenterAgentList },
+      { path: '/basic/button', element: BasicButton },
+      { path: '/basic/badges', element: BasicBadges },
+      { path: '/basic/breadcrumb-paging', element: BasicBreadcrumb },
+      { path: '/basic/collapse', element: BasicCollapse },
+      { path: '/basic/tabs-pills', element: BasicTabsPills },
+      { path: '/basic/typography', element: BasicTypography },
+      { path: '/forms/form-basic', element: FormsElements },
+      { path: '/tables/bootstrap', element: BootstrapTable },
+      { path: '/charts/nvd3', element: NVD3Chart },
+      { path: '/maps/google-map', element: GoogleMaps },
+      { path: '/sample-page', element: SamplePage },
+      { path: '*', element: () => <Navigate to={BASE_URL} /> }
     ]
   }
 ];

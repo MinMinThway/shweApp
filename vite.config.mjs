@@ -9,9 +9,15 @@ export default defineConfig(({ mode }) => {
 
   return {
     server: {
-      open: true,
-      host: '127.0.0.1',
-      port: PORT
+      port: 3000,
+      proxy: {
+        '/api': {
+          target: 'https://api.shweapps.com',
+          changeOrigin: true,
+       
+          secure: true,
+        },
+      },
     },
     preview: {
       port: PORT,
