@@ -9,10 +9,10 @@ import avatar1 from '../../../../assets/images/user/avatar-1.jpg';
 import avatar2 from '../../../../assets/images/user/avatar-2.jpg';
 import avatar3 from '../../../../assets/images/user/avatar-3.jpg';
 import avatar4 from '../../../../assets/images/user/avatar-4.jpg';
-
+import { useAuth } from '../../../../../AuthContext';
 const NavRight = () => {
   const [listOpen, setListOpen] = useState(false);
-
+  const { logout } = useAuth();
   const notiData = [
     {
       name: 'Joseph William',
@@ -65,7 +65,7 @@ const NavRight = () => {
                       <img className="img-radius" src={avatar1} alt="Generic placeholder" />
                       <Card.Body className="p-0">
                         <p>
-                          <strong>John Doe</strong>
+                          <strong>John Doe </strong>
                           <span className="n-time text-muted">
                             <i className="icon feather icon-clock me-2" />
                             30 min
@@ -123,8 +123,8 @@ const NavRight = () => {
             <Dropdown.Menu align="end" className="profile-notification">
               <div className="pro-head">
                 <img src={avatar1} className="img-radius" alt="User Profile" />
-                <span>John Doe</span>
-                <Link to="#" className="dud-logout" title="Logout">
+                <span>John Doe </span>
+                <Link to="#" className="dud-logout" title="Logout" onClick={logout}>
                   <i className="feather icon-log-out" />
                 </Link>
               </div>
