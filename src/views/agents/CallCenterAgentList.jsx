@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Tabs, Tab, Button, Form, Pagination } from 'react-bootstrap';
-import axios from 'axios';
+import { Row, Col, Table, Button, Form, Pagination } from 'react-bootstrap';
+import { fetchAgents as fetchAgentData } from 'api/callAgent'; // ✅ Fix name conflict
 
 const CallCenterAgentList = () => {
   const [agents, setAgents] = useState([]);
@@ -15,11 +15,9 @@ const CallCenterAgentList = () => {
 
   const fetchAgents = async () => {
     try {
-      const response = await axios.get(
-        `http://localhost:8080/api/call/agents?searchString=${searchTerm}&agentName=&page=${currentPage}&size=${pageSize}`
-      );
-      setAgents(response.data.content);
-      setTotalPages(response.data.totalPages);
+      const data = await fetchAgentData(currentPage, pageSize, searchTerm, '');
+      setAgents(data?.content || []); // ✅ Use `content` if response is paginated
+      setTotalPages(data?.totalPages || 0);
       setError(null);
     } catch (err) {
       setError('Failed to fetch agents');
@@ -30,12 +28,13 @@ const CallCenterAgentList = () => {
   };
 
   useEffect(() => {
+    setLoading(true);
     fetchAgents();
   }, [currentPage, searchTerm]);
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(0); // Reset to first page when searching
+    setCurrentPage(0);
   };
 
   const handlePageChange = (page) => {
@@ -56,8 +55,8 @@ const CallCenterAgentList = () => {
 
   return (
     <div>
-      <h2>Call Center Agents</h2>
-      
+      <h3>Call Center Agents</h3>
+
       {/* Search Bar */}
       <Row className="mb-3">
         <Col>
@@ -74,28 +73,22 @@ const CallCenterAgentList = () => {
         <thead>
           <tr>
             <th onClick={() => handleSort('agentName')}>
-              Agent Name {sortBy === 'agentName' && 
-                (sortDirection === 'asc' ? '↑' : '↓')}
+              Agent Name {sortBy === 'agentName' && (sortDirection === 'asc' ? '↑' : '↓')}
             </th>
             <th onClick={() => handleSort('phoneNumber')}>
-              Phone Number {sortBy === 'phoneNumber' && 
-                (sortDirection === 'asc' ? '↑' : '↓')}
+              Phone Number {sortBy === 'phoneNumber' && (sortDirection === 'asc' ? '↑' : '↓')}
             </th>
             <th onClick={() => handleSort('language')}>
-              Language {sortBy === 'language' && 
-                (sortDirection === 'asc' ? '↑' : '↓')}
+              Language {sortBy === 'language' && (sortDirection === 'asc' ? '↑' : '↓')}
             </th>
             <th onClick={() => handleSort('currentCallCount')}>
-              Current Calls {sortBy === 'currentCallCount' && 
-                (sortDirection === 'asc' ? '↑' : '↓')}
+              Current Calls {sortBy === 'currentCallCount' && (sortDirection === 'asc' ? '↑' : '↓')}
             </th>
             <th onClick={() => handleSort('lastOnlineAt')}>
-              Last Online {sortBy === 'lastOnlineAt' && 
-                (sortDirection === 'asc' ? '↑' : '↓')}
+              Last Online {sortBy === 'lastOnlineAt' && (sortDirection === 'asc' ? '↑' : '↓')}
             </th>
             <th onClick={() => handleSort('status')}>
-              Status {sortBy === 'status' && 
-                (sortDirection === 'asc' ? '↑' : '↓')}
+              Status {sortBy === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
             </th>
             <th>Actions</th>
           </tr>
