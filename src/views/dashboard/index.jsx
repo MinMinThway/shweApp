@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Tabs, Tab, Button, Pagination, Modal, Form } from 'react-bootstrap';
-import { fetchOrders, fetchOrderById, deleteOrderById, updateOrderStatus } from '../../api/orderApi';
+import {
+  fetchOrders,
+  fetchOrderById,
+  deleteOrderById,
+  updateOrderStatus,
+  confirmOrder,
+  markOrderAsIncomplete,
+  finishOrder
+} from '../../api/orderApi';
 
 const statusFilters = {
   PENDING: 'Pending',
@@ -19,10 +27,40 @@ const DashDefault = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize] = useState(5);
   const [totalPages, setTotalPages] = useState(0);
-
+  const [rejectNotes, setRejectNotes] = useState('');
+  const [reportImage, setReportImage] = useState(null);
   const [showDialog, setShowDialog] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState('');
+
+  const handleUpdateOrderStatus = async () => {
+    if (!selectedOrder) return;
+    try {
+      if (selectedStatus === 'CONFIRMED') {
+        await confirmOrder(selectedOrder.id);
+      } else if (selectedStatus === 'INCOMPLETE') {
+        if (!rejectNotes.trim()) {
+          alert('Reject note is required for marking incomplete.');
+          return;
+        }
+        await markOrderAsIncomplete(selectedOrder.id, rejectNotes);
+      } else if (selectedStatus === 'FINISHED') {
+        if (!reportImage) {
+          alert('Please upload a report image.');
+          return;
+        }
+        await finishOrder(selectedOrder.id, reportImage);
+      } else {
+        await updateOrderStatus(selectedOrder.id, selectedStatus);
+      }
+
+      setShowDialog(false);
+      fetchOrdersData();
+    } catch (err) {
+      console.error('Failed to update order status', err);
+      alert('Something went wrong.');
+    }
+  };
 
   const fetchOrdersData = async () => {
     try {
@@ -143,6 +181,7 @@ const DashDefault = () => {
                           <th>Order Type</th>
                           <th>Submit Date</th>
                           <th>Customer Name</th>
+                          <th>Passport Name</th>
                           <th>Status</th>
                           <th>Actions</th>
                         </tr>
@@ -153,7 +192,8 @@ const DashDefault = () => {
                             <td>{order.orderNumber}</td>
                             <td>{order.orderType}</td>
                             <td>{order.date || order.submiDate}</td>
-                            <td>{order.name || order.nameOnPassport}</td>
+                            <td>{order.name || order.name}</td>
+                            <td>{order.nameOnPassport || order.nameOnPassport}</td>
                             <td>
                               <span className={`badge ${getStatusBadgeClass(order.status)}`}>
                                 {statusFilters[order.status] || order.status}
@@ -198,43 +238,54 @@ const DashDefault = () => {
                 <strong>City:</strong> {selectedOrder.city}
               </p>
               <p>
-                <strong>Status:</strong> {statusFilters[selectedOrder.status]}
+                <strong>Current Status:</strong>{' '}
+                <span className={`badge ${getStatusBadgeClass(selectedOrder.status)}`}>{statusFilters[selectedOrder.status]}</span>
               </p>
 
-              {selectedOrder.status === 'CONFIRMED' ? (
-                <>
-                  <Button variant="primary" className="me-2">
-                    Edit
-                  </Button>
-                  <Button variant="danger" onClick={handleDelete}>
-                    Delete
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Form.Group controlId="statusSelect" className="my-3">
-                    <Form.Label>Change Status</Form.Label>
-                    <Form.Select value={selectedStatus} onChange={handleStatusChange}>
-                      {Object.entries(statusFilters).map(([key, label]) => (
-                        <option key={key} value={key}>
-                          {label}
-                        </option>
-                      ))}
-                    </Form.Select>
-                  </Form.Group>
-                  <Button variant="success" onClick={handleUpdateStatus} className="me-2">
-                    Update Status
-                  </Button>
-                  <Button variant="danger" onClick={handleDelete}>
-                    Delete
-                  </Button>
-                </>
+              {/* === Status Selector === */}
+              <Form.Group controlId="statusSelect" className="my-3">
+                <Form.Label>Change Status</Form.Label>
+                <Form.Select value={selectedStatus} onChange={handleStatusChange}>
+                  {Object.entries(statusFilters).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+
+              {/* === Reject Note for INCOMPLETE === */}
+              {selectedStatus === 'INCOMPLETE' && (
+                <Form.Group controlId="rejectNotes" className="my-3">
+                  <Form.Label>❌ Reject Notes</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={3}
+                    value={rejectNotes}
+                    onChange={(e) => setRejectNotes(e.target.value)}
+                    placeholder="Enter reason for marking as incomplete"
+                  />
+                </Form.Group>
               )}
+
+              {/* === File Upload for FINISHED === */}
+              {selectedStatus === 'FINISHED' && (
+                <Form.Group controlId="reportImage" className="my-3">
+                  <Form.Label>📄 Upload 90 Days Report</Form.Label>
+                  <Form.Control type="file" onChange={(e) => setReportImage(e.target.files[0])} accept="image/*" />
+                </Form.Group>
+              )}
+
+              {/* === Submit Button === */}
+              <Button variant="primary" onClick={handleUpdateOrderStatus}>
+                Update Status
+              </Button>
             </>
           ) : (
             <p>Loading order...</p>
           )}
         </Modal.Body>
+
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowDialog(false)}>
             Close

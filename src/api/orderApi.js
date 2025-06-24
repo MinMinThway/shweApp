@@ -55,6 +55,34 @@ export const finishOrder = async (orderId, newNinetyDaysReportImage) => {
       'Content-Type': 'multipart/form-data'
     }
   });
+  return response.data;
+};
 
+// Mark order as incomplete/uncompleted
+export const markOrderAsIncomplete = async (orderId, rejectNotes) => {
+  const params = new URLSearchParams();
+  params.append('orderId', orderId);
+  params.append('rejectNotes', rejectNotes);
+
+  const response = await axios.post(`${API_BASE_URL}api/v1/order/uncomplete`, params, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  });
+  return response.data;
+};
+
+// Confirm order
+export const confirmOrder = async (orderId) => {
+  const params = new URLSearchParams();
+  params.append('orderId', orderId);
+
+  const response = await axios.post(`${API_BASE_URL}api/v1/order/confirm`, params, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  });
   return response.data;
 };
