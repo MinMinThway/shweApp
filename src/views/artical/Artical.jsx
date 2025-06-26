@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Button, Spinner, Alert, Form } from 'react-bootstrap';
+import { Row, Col, Button, Spinner, Alert, Form, Modal } from 'react-bootstrap';
 
 import Card from '../../components/Card/MainCard';
-import { fetchContents } from '../../api/ContentApi';
+import { fetchContents, createContent } from '../../api/ContentApi';
 
 const Artical = () => {
   const [news, setNews] = useState([]);
@@ -14,7 +14,16 @@ const Artical = () => {
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 5;
 
+  // Modal states
+  const [showModal, setShowModal] = useState(false);
+  const [formTitle, setFormTitle] = useState('');
+  const [formBody, setFormBody] = useState('');
+  const [formImages, setFormImages] = useState([]);
+  const [formSubmitting, setFormSubmitting] = useState(false);
+  const [formError, setFormError] = useState(null);
+
   const loadNews = async (pageNumber = 0, search = '') => {
+    setLoading(true);
     try {
       const data = await fetchContents('INF', search, pageNumber, pageSize);
       setNews(data.content || []);
@@ -30,14 +39,13 @@ const Artical = () => {
   };
 
   useEffect(() => {
-    setLoading(true);
     loadNews(page, searchString);
   }, []);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchString(value);
-    loadNews(0, value); // reset to first page on new search
+    loadNews(0, value);
   };
 
   const handlePrev = () => {
@@ -49,6 +57,53 @@ const Artical = () => {
   const handleNext = () => {
     if (page < totalPages - 1) {
       loadNews(page + 1, searchString);
+    }
+  };
+
+  // Modal open/close
+  const openModal = () => {
+    setFormTitle('');
+    setFormBody('');
+    setFormImages([]);
+    setFormError(null);
+    setShowModal(true);
+  };
+  const closeModal = () => setShowModal(false);
+
+  // File input change
+  const handleFileChange = (e) => {
+    setFormImages(Array.from(e.target.files));
+  };
+
+  // Form submit
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setFormError(null);
+
+    if (!formTitle.trim()) {
+      setFormError('Title is required');
+      return;
+    }
+    if (!formBody.trim()) {
+      setFormError('Body is required');
+      return;
+    }
+
+    setFormSubmitting(true);
+    try {
+      await createContent({
+        title: formTitle,
+        body: formBody,
+        contentType: 'INF', // fixed for Artical
+        imageFiles: formImages
+      });
+      closeModal();
+      loadNews(0, searchString); // refresh list on add
+    } catch (err) {
+      setFormError('Failed to create content');
+      console.error(err);
+    } finally {
+      setFormSubmitting(false);
     }
   };
 
@@ -70,14 +125,14 @@ const Artical = () => {
   }
 
   return (
-    <React.Fragment>
+    <>
       <Row className="mb-3">
         <Col md={6}>
           <Form.Control type="text" placeholder="Search news" value={searchString} onChange={handleSearchChange} />
         </Col>
         <Col md={6} className="text-end">
-          <Button variant="primary" className="w-25">
-            Add News
+          <Button variant="primary" className="w-25" onClick={openModal}>
+            Add New
           </Button>
         </Col>
       </Row>
@@ -132,7 +187,58 @@ const Artical = () => {
           </Button>
         </Col>
       </Row>
-    </React.Fragment>
+
+      {/* Modal */}
+      <Modal show={showModal} onHide={closeModal} backdrop="static" keyboard={false}>
+        <Modal.Header closeButton>
+          <Modal.Title>Add New Content</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleSubmit}>
+          <Modal.Body>
+            {formError && <Alert variant="danger">{formError}</Alert>}
+            <Form.Group className="mb-3" controlId="contentTitle">
+              <Form.Label>
+                Title <span className="text-danger">*</span>
+              </Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Enter title"
+                value={formTitle}
+                onChange={(e) => setFormTitle(e.target.value)}
+                required
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="contentBody">
+              <Form.Label>
+                Body <span className="text-danger">*</span>
+              </Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={5}
+                placeholder="Enter body"
+                value={formBody}
+                onChange={(e) => setFormBody(e.target.value)}
+                required
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="contentImages">
+              <Form.Label>Images (optional)</Form.Label>
+              <Form.Control type="file" multiple accept="image/*" onChange={handleFileChange} />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={closeModal} disabled={formSubmitting}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit" disabled={formSubmitting}>
+              {formSubmitting ? 'Saving...' : 'Save'}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+    </>
   );
 };
 

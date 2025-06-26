@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Button, Spinner, Alert, Form } from 'react-bootstrap';
+import { Row, Col, Button, Spinner, Alert, Form, Modal } from 'react-bootstrap';
 
 import Card from '../../components/Card/MainCard';
-import { fetchContents } from '../../api/ContentApi';
+import { fetchContents, createContent } from '../../api/ContentApi';
 
 const SamplePage = () => {
+  // Existing states
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -14,11 +15,18 @@ const SamplePage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 5;
 
-  const loadNews = async (pageNumber = 0, search = '') => {
-    try {
-      const data = await fetchContents('INF', search, pageNumber, pageSize);
-      console.log('Fetched data:', data);
+  // New: Modal states
+  const [showModal, setShowModal] = useState(false);
+  const [formTitle, setFormTitle] = useState('');
+  const [formBody, setFormBody] = useState('');
+  const [formImages, setFormImages] = useState([]);
+  const [formSubmitting, setFormSubmitting] = useState(false);
+  const [formError, setFormError] = useState(null);
 
+  const loadNews = async (pageNumber = 0, search = '') => {
+    setLoading(true);
+    try {
+      const data = await fetchContents('NEWS', search, pageNumber, pageSize); // Use 'NEWS' contentType here for news
       setNews(data.content || []);
       setTotalPages(data.totalPages || 1);
       setError(null);
@@ -32,14 +40,13 @@ const SamplePage = () => {
   };
 
   useEffect(() => {
-    setLoading(true);
     loadNews(page, searchString);
   }, []);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchString(value);
-    loadNews(0, value); // reset to first page on new search
+    loadNews(0, value);
   };
 
   const handlePrev = () => {
@@ -51,6 +58,54 @@ const SamplePage = () => {
   const handleNext = () => {
     if (page < totalPages - 1) {
       loadNews(page + 1, searchString);
+    }
+  };
+
+  // Modal open/close handlers
+  const openModal = () => {
+    setFormTitle('');
+    setFormBody('');
+    setFormImages([]);
+    setFormError(null);
+    setShowModal(true);
+  };
+  const closeModal = () => setShowModal(false);
+
+  // Handle file input change
+  const handleFileChange = (e) => {
+    setFormImages(Array.from(e.target.files));
+  };
+
+  // Form submit handler
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setFormError(null);
+
+    if (!formTitle.trim()) {
+      setFormError('Title is required');
+      return;
+    }
+    if (!formBody.trim()) {
+      setFormError('Body is required');
+      return;
+    }
+    // Images optional, add if needed validation here
+
+    setFormSubmitting(true);
+    try {
+      await createContent({
+        title: formTitle,
+        body: formBody,
+        contentType: 'NEWS',
+        imageFiles: formImages
+      });
+      closeModal();
+      loadNews(0, searchString); // reload first page after add
+    } catch (err) {
+      setFormError('Failed to create news');
+      console.error(err);
+    } finally {
+      setFormSubmitting(false);
     }
   };
 
@@ -72,13 +127,13 @@ const SamplePage = () => {
   }
 
   return (
-    <React.Fragment>
+    <>
       <Row className="mb-3">
         <Col md={6}>
           <Form.Control type="text" placeholder="Search news" value={searchString} onChange={handleSearchChange} />
         </Col>
         <Col md={6} className="text-end">
-          <Button variant="primary" className="w-25">
+          <Button variant="primary" className="w-25" onClick={openModal}>
             Add News
           </Button>
         </Col>
@@ -134,7 +189,58 @@ const SamplePage = () => {
           </Button>
         </Col>
       </Row>
-    </React.Fragment>
+
+      {/* Modal for Adding News */}
+      <Modal show={showModal} onHide={closeModal} backdrop="static" keyboard={false}>
+        <Modal.Header closeButton>
+          <Modal.Title>Add News</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleSubmit}>
+          <Modal.Body>
+            {formError && <Alert variant="danger">{formError}</Alert>}
+            <Form.Group className="mb-3" controlId="newsTitle">
+              <Form.Label>
+                Title <span className="text-danger">*</span>
+              </Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Enter news title"
+                value={formTitle}
+                onChange={(e) => setFormTitle(e.target.value)}
+                required
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="newsBody">
+              <Form.Label>
+                Body <span className="text-danger">*</span>
+              </Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={5}
+                placeholder="Enter news body"
+                value={formBody}
+                onChange={(e) => setFormBody(e.target.value)}
+                required
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="newsImages">
+              <Form.Label>Images (optional)</Form.Label>
+              <Form.Control type="file" multiple accept="image/*" onChange={handleFileChange} />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={closeModal} disabled={formSubmitting}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit" disabled={formSubmitting}>
+              {formSubmitting ? 'Saving...' : 'Save'}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+    </>
   );
 };
 
