@@ -23,9 +23,11 @@ export const getAgentById = async (id) => {
 };
 
 export const createAgent = async (agentData) => {
+    console.log(agentData);
   const response = await axios.post(`${API_BASE_URL}api/call/create/Agent`, agentData, {
     headers: getAuthHeader()
   });
+  console.log(response);
   return response.data;
 };
 
@@ -37,7 +39,8 @@ export const updateAgent = async (id, agentData) => {
 };
 
 export const deleteAgent = async (id) => {
-  const response = await axios.delete(`${API_BASE_URL}api/call/delete/Agent/${id}`, {
+  console.log(id);
+  const response = await axios.delete(`${API_BASE_URL}api/call/delete/Agent/${11}`, {
     headers: getAuthHeader()
   });
   return response.status === 204; // Returns true if deletion was successful
