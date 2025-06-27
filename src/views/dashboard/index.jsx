@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Tabs, Tab, Button, Pagination, Modal, Form } from 'react-bootstrap';
+
+// Replace these with your actual API calls:
 import {
   fetchOrders,
   fetchOrderById,
@@ -18,6 +20,22 @@ const statusFilters = {
   FINISHED: 'Finished'
 };
 
+// Helper to download image from URL
+const downloadImage = (url, filename) => {
+  fetch(url, {
+    mode: 'cors'
+  })
+    .then((response) => response.blob())
+    .then((blob) => {
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = filename || 'download.jpg';
+      link.click();
+      window.URL.revokeObjectURL(link.href);
+    })
+    .catch(() => alert('Failed to download image.'));
+};
+
 const DashDefault = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +50,38 @@ const DashDefault = () => {
   const [showDialog, setShowDialog] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState('');
+
+  const fetchOrdersData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetchOrders(currentPage, pageSize, searchTerm, activeTab);
+      setOrders(Array.isArray(response.orders) ? response.orders : []);
+      setTotalPages(response.totalPages || 1);
+      setError(null);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to fetch orders');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrdersData();
+  }, [currentPage, searchTerm, activeTab]);
+
+  const handleRowClick = async (orderId) => {
+    try {
+      const order = await fetchOrderById(orderId);
+      setSelectedOrder(order);
+      setSelectedStatus(order.orderStatus || order.status);
+      setRejectNotes('');
+      setReportImage(null);
+      setShowDialog(true);
+    } catch (err) {
+      console.error('Failed to load order details', err);
+    }
+  };
 
   const handleUpdateOrderStatus = async () => {
     if (!selectedOrder) return;
@@ -53,7 +103,6 @@ const DashDefault = () => {
       } else {
         await updateOrderStatus(selectedOrder.id, selectedStatus);
       }
-
       setShowDialog(false);
       fetchOrdersData();
     } catch (err) {
@@ -61,36 +110,6 @@ const DashDefault = () => {
       alert('Something went wrong.');
     }
   };
-
-  const fetchOrdersData = async () => {
-    try {
-      setLoading(true);
-      const response = await fetchOrders(currentPage, pageSize, searchTerm, activeTab);
-      setOrders(Array.isArray(response.orders) ? response.orders : []);
-      setTotalPages(response.totalPages || 1);
-      setError(null);
-    } catch (err) {
-      console.error(err);
-      setError('Failed to fetch orders');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRowClick = async (orderId) => {
-    try {
-      const order = await fetchOrderById(orderId);
-      setSelectedOrder(order);
-      setSelectedStatus(order.status);
-      setShowDialog(true);
-    } catch (err) {
-      console.error('Failed to load order details', err);
-    }
-  };
-
-  useEffect(() => {
-    fetchOrdersData();
-  }, [currentPage, searchTerm, activeTab]);
 
   const handlePageChange = (page) => {
     if (page >= 0 && page < totalPages) {
@@ -130,30 +149,8 @@ const DashDefault = () => {
     );
   };
 
-  const handleDelete = async () => {
-    if (!selectedOrder) return;
-    try {
-      await deleteOrderById(selectedOrder.id);
-      setShowDialog(false);
-      fetchOrdersData();
-    } catch (err) {
-      console.error('Failed to delete order', err);
-    }
-  };
-
   const handleStatusChange = (e) => {
     setSelectedStatus(e.target.value);
-  };
-
-  const handleUpdateStatus = async () => {
-    if (!selectedOrder) return;
-    try {
-      await updateOrderStatus(selectedOrder.id, selectedStatus);
-      setShowDialog(false);
-      fetchOrdersData();
-    } catch (err) {
-      console.error('Failed to update status', err);
-    }
   };
 
   return (
@@ -174,7 +171,7 @@ const DashDefault = () => {
               >
                 {Object.entries(statusFilters).map(([key, label]) => (
                   <Tab key={key} eventKey={key} title={label}>
-                    <Table responsive>
+                    <Table responsive hover>
                       <thead>
                         <tr>
                           <th>Order Number</th>
@@ -182,6 +179,7 @@ const DashDefault = () => {
                           <th>Submit Date</th>
                           <th>Customer Name</th>
                           <th>Passport Name</th>
+                          <th>Passport Number</th>
                           <th>Status</th>
                           <th>Actions</th>
                         </tr>
@@ -191,16 +189,24 @@ const DashDefault = () => {
                           <tr key={index} onClick={() => handleRowClick(order.id)} style={{ cursor: 'pointer' }}>
                             <td>{order.orderNumber}</td>
                             <td>{order.orderType}</td>
-                            <td>{order.date || order.submiDate}</td>
-                            <td>{order.name || order.name}</td>
-                            <td>{order.nameOnPassport || order.nameOnPassport}</td>
+                            <td>{order.submiDate || order.date}</td>
+                            <td>{order.name || order.customerName || '-'}</td>
+                            <td>{order.nameOnPassport || '-'}</td>
+                            <td>{order.passportNumber || '-'}</td>
                             <td>
-                              <span className={`badge ${getStatusBadgeClass(order.status)}`}>
-                                {statusFilters[order.status] || order.status}
+                              <span className={`badge ${getStatusBadgeClass(order.orderStatus || order.status)}`}>
+                                {statusFilters[order.orderStatus || order.status] || order.orderStatus || order.status}
                               </span>
                             </td>
                             <td>
-                              <Button variant="outline-info" size="sm">
+                              <Button
+                                variant="outline-info"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRowClick(order.id);
+                                }}
+                              >
                                 View
                               </Button>
                             </td>
@@ -217,30 +223,157 @@ const DashDefault = () => {
         </Col>
       </Row>
 
-      {/* ===== Modal Dialog for Order Detail ===== */}
-      <Modal show={showDialog} onHide={() => setShowDialog(false)} size="lg" centered>
+      {/* Modal for Order Detail */}
+      <Modal show={showDialog} onHide={() => setShowDialog(false)} size="lg" centered scrollable>
         <Modal.Header closeButton>
           <Modal.Title>Order Detail</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {selectedOrder ? (
             <>
-              <p>
-                <strong>Name:</strong> {selectedOrder.nameOnPassport}
-              </p>
-              <p>
-                <strong>Passport Number:</strong> {selectedOrder.passportNumber}
-              </p>
-              <p>
-                <strong>Visa Type:</strong> {selectedOrder.visaType}
-              </p>
-              <p>
-                <strong>City:</strong> {selectedOrder.city}
-              </p>
-              <p>
-                <strong>Current Status:</strong>{' '}
-                <span className={`badge ${getStatusBadgeClass(selectedOrder.status)}`}>{statusFilters[selectedOrder.status]}</span>
-              </p>
+              <Row>
+                <Col md={6}>
+                  <p>
+                    <strong>Order Number:</strong> {selectedOrder.orderNumber}
+                  </p>
+                  <p>
+                    <strong>User ID:</strong> {selectedOrder.userId}
+                  </p>
+                  <p>
+                    <strong>Name On Passport:</strong> {selectedOrder.nameOnPassport}
+                  </p>
+                  <p>
+                    <strong>Passport Number:</strong> {selectedOrder.passportNumber}
+                  </p>
+                  <p>
+                    <strong>Visa Type:</strong> {selectedOrder.visaType}
+                  </p>
+                  <p>
+                    <strong>City:</strong> {selectedOrder.city}
+                  </p>
+                  <p>
+                    <strong>Next Due Date:</strong> {selectedOrder.nextDueDate}
+                  </p>
+                  <p>
+                    <strong>Payment Status:</strong> {selectedOrder.paymentStatus}
+                  </p>
+                  <p>
+                    <strong>Order Status:</strong>{' '}
+                    <span className={`badge ${getStatusBadgeClass(selectedOrder.orderStatus)}`}>
+                      {statusFilters[selectedOrder.orderStatus] || selectedOrder.orderStatus}
+                    </span>
+                  </p>
+                  <p>
+                    <strong>Order Type:</strong> {selectedOrder.orderType}
+                  </p>
+                  <p>
+                    <strong>Submit Date:</strong> {selectedOrder.submiDate}
+                  </p>
+                  <p>
+                    <strong>Confirm Date:</strong> {selectedOrder.comfirmDate || '-'}
+                  </p>
+                  <p>
+                    <strong>Total Price:</strong> ${selectedOrder.totalPrice}
+                  </p>
+                  <p>
+                    <strong>Notes:</strong> {selectedOrder.notes || '-'}
+                  </p>
+                </Col>
+                <Col md={6}>
+                  {/* Images */}
+                  <div>
+                    <h5>Documents & Photos</h5>
+
+                    {selectedOrder.passportVisaPageUrl && (
+                      <div className="mb-3">
+                        <p>
+                          <strong>Passport Visa Page:</strong>
+                        </p>
+                        <img
+                          src={selectedOrder.passportVisaPageUrl}
+                          alt="Passport Visa Page"
+                          style={{ maxWidth: '100%', maxHeight: '200px' }}
+                        />
+                        <br />
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          className="mt-1"
+                          onClick={() => downloadImage(selectedOrder.passportVisaPageUrl, 'passportVisaPage.jpg')}
+                        >
+                          Download
+                        </Button>
+                      </div>
+                    )}
+
+                    {selectedOrder.passportBioPageUrl && (
+                      <div className="mb-3">
+                        <p>
+                          <strong>Passport Bio Page:</strong>
+                        </p>
+                        <img
+                          src={selectedOrder.passportBioPageUrl}
+                          alt="Passport Bio Page"
+                          style={{ maxWidth: '100%', maxHeight: '200px' }}
+                        />
+                        <br />
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          className="mt-1"
+                          onClick={() => downloadImage(selectedOrder.passportBioPageUrl, 'passportBioPage.jpg')}
+                        >
+                          Download
+                        </Button>
+                      </div>
+                    )}
+
+                    {selectedOrder.oldNinetyDaysReportUrl && (
+                      <div className="mb-3">
+                        <p>
+                          <strong>Old 90 Days Report:</strong>
+                        </p>
+                        <img
+                          src={selectedOrder.oldNinetyDaysReportUrl}
+                          alt="Old 90 Days Report"
+                          style={{ maxWidth: '100%', maxHeight: '200px' }}
+                        />
+                        <br />
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          className="mt-1"
+                          onClick={() => downloadImage(selectedOrder.oldNinetyDaysReportUrl, 'old90DaysReport.jpg')}
+                        >
+                          Download
+                        </Button>
+                      </div>
+                    )}
+
+                    {selectedOrder.newNinetyDaysReportUrl && (
+                      <div className="mb-3">
+                        <p>
+                          <strong>New 90 Days Report:</strong>
+                        </p>
+                        <img
+                          src={selectedOrder.newNinetyDaysReportUrl}
+                          alt="New 90 Days Report"
+                          style={{ maxWidth: '100%', maxHeight: '200px' }}
+                        />
+                        <br />
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          className="mt-1"
+                          onClick={() => downloadImage(selectedOrder.newNinetyDaysReportUrl, 'new90DaysReport.jpg')}
+                        >
+                          Download
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </Col>
+              </Row>
 
               {/* === Status Selector === */}
               <Form.Group controlId="statusSelect" className="my-3">
