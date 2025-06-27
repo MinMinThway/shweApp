@@ -213,7 +213,7 @@ const CallCenterAgentList = () => {
           <Form onSubmit={handleCreateAgent}>
             <Form.Group className="mb-3">
               <Form.Label>Agent Name</Form.Label>
-              <Form.Control type="text" name="agentName" value={formData.agentName} onChange={handleFormChange} required />
+              <Form.Control type="text" name="name" value={formData.name} onChange={handleFormChange} required />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Phone Number</Form.Label>

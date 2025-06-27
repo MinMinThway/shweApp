@@ -5,6 +5,7 @@ import Loader from './components/Loader/Loader';
 import AdminLayout from './layouts/AdminLayout';
 import ProtectedRoute from './ProtectedRoute';
 import { BASE_URL } from './config/constant';
+import { path } from 'd3';
 
 const SignIn = lazy(() => import('./views/auth/signin/SignIn1'));
 const SignUp = lazy(() => import('./views/auth/signup/SignUp1'));
@@ -26,6 +27,7 @@ const BootstrapTable = lazy(() => import('./views/tables/BootstrapTable'));
 const NVD3Chart = lazy(() => import('./views/charts/nvd3-chart'));
 const GoogleMaps = lazy(() => import('./views/maps/GoogleMaps'));
 const SamplePage = lazy(() => import('./views/extra/SamplePage'));
+const logout = lazy(()=> import('./views/logout'));
 
 export const renderRoutes = (routes = []) => (
   <Suspense fallback={<Loader />}>
@@ -87,6 +89,7 @@ const routes = [
       { path: '/charts/nvd3', element: NVD3Chart },
       { path: '/maps/google-map', element: GoogleMaps },
       { path: '/sample-page', element: SamplePage },
+      {path :'/app/dashboard/logout', element : logout},
       { path: '*', element: () => <Navigate to={BASE_URL} /> }
     ]
   }
