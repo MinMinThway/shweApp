@@ -79,20 +79,19 @@ const Artical = () => {
       console.error(err);
     }
   };
-
   const openModal = (item = null) => {
     if (item) {
       setEditId(item.id);
       setFormTitle(item.title);
       setFormBody(item.body);
       setExistingImages(item.images || []);
-      setFormContentType(item.contentType || CONTENT_TYPES.INF);
+      setFormContentType(filterContentType);
     } else {
       setEditId(null);
       setFormTitle('');
       setFormBody('');
       setExistingImages([]);
-      setFormContentType(CONTENT_TYPES.INF);
+      setFormContentType(filterContentType); // ← use the current filter type!
     }
     setFormImages([]);
     setFormError(null);
@@ -162,8 +161,12 @@ const Artical = () => {
         {news.map((item, index) => (
           <Col key={index} md={6} lg={4} className="mb-4">
             <Card title={item.title || 'No Title'} isOption>
-              <div className="mb-2"><strong>Body:</strong> {item.body || 'N/A'}</div>
-              <div className="mb-2"><strong>Content Type:</strong> {item.contentType || 'N/A'}</div>
+              <div className="mb-2">
+                <strong>Body:</strong> {item.body || 'N/A'}
+              </div>
+              <div className="mb-2">
+                <strong>Content Type:</strong> {item.contentType || 'N/A'}
+              </div>
               <div className="mb-2">
                 <strong>Publish Date:</strong> {item.publishDate ? new Date(item.publishDate).toLocaleDateString() : 'N/A'}
               </div>
@@ -184,8 +187,12 @@ const Artical = () => {
                 </div>
               )}
               <div className="d-flex justify-content-between">
-                <Button variant="warning" size="sm" onClick={() => openModal(item)}>Edit</Button>
-                <Button variant="danger" size="sm" onClick={() => handleDelete(item.id)}>Delete</Button>
+                <Button variant="warning" size="sm" onClick={() => openModal(item)}>
+                  Edit
+                </Button>
+                <Button variant="danger" size="sm" onClick={() => handleDelete(item.id)}>
+                  Delete
+                </Button>
               </div>
             </Card>
           </Col>
@@ -194,9 +201,15 @@ const Artical = () => {
 
       <Row className="mt-3">
         <Col className="d-flex justify-content-center gap-3">
-          <Button variant="secondary" onClick={handlePrev} disabled={page === 0}>Previous</Button>
-          <div className="align-self-center">Page {page + 1} of {totalPages}</div>
-          <Button variant="secondary" onClick={handleNext} disabled={page >= totalPages - 1}>Next</Button>
+          <Button variant="secondary" onClick={handlePrev} disabled={page === 0}>
+            Previous
+          </Button>
+          <div className="align-self-center">
+            Page {page + 1} of {totalPages}
+          </div>
+          <Button variant="secondary" onClick={handleNext} disabled={page >= totalPages - 1}>
+            Next
+          </Button>
         </Col>
       </Row>
 
@@ -209,7 +222,9 @@ const Artical = () => {
             {formError && <Alert variant="danger">{formError}</Alert>}
 
             <Form.Group className="mb-3" controlId="contentTitle">
-              <Form.Label>Title <span className="text-danger">*</span></Form.Label>
+              <Form.Label>
+                Title <span className="text-danger">*</span>
+              </Form.Label>
               <Form.Control
                 type="text"
                 placeholder="Enter title"
@@ -220,19 +235,19 @@ const Artical = () => {
             </Form.Group>
 
             <Form.Group className="mb-3" controlId="contentType">
-              <Form.Label>Content Type <span className="text-danger">*</span></Form.Label>
-              <Form.Select
-                value={formContentType}
-                onChange={(e) => setFormContentType(e.target.value)}
-                required
-              >
+              <Form.Label>
+                Content Type <span className="text-danger">*</span>
+              </Form.Label>
+              <Form.Select value={formContentType} onChange={(e) => setFormContentType(e.target.value)} required>
                 <option value={CONTENT_TYPES.INF}>INF (Information)</option>
                 <option value={CONTENT_TYPES.TRA}>TRA (Training)</option>
               </Form.Select>
             </Form.Group>
 
             <Form.Group className="mb-3" controlId="contentBody">
-              <Form.Label>Body <span className="text-danger">*</span></Form.Label>
+              <Form.Label>
+                Body <span className="text-danger">*</span>
+              </Form.Label>
               <Form.Control
                 as="textarea"
                 rows={5}
@@ -266,7 +281,9 @@ const Artical = () => {
             )}
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={closeModal} disabled={formSubmitting}>Cancel</Button>
+            <Button variant="secondary" onClick={closeModal} disabled={formSubmitting}>
+              Cancel
+            </Button>
             <Button variant="primary" type="submit" disabled={formSubmitting}>
               {formSubmitting ? 'Saving...' : editId ? 'Update' : 'Save'}
             </Button>
