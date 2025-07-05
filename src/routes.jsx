@@ -16,6 +16,7 @@ const Artical = lazy(() => import('./views/artical/Artical'));
 const Service = lazy(() => import('./views/service/Service'));
 const Exchange = lazy(() => import('./views/exchange/Exchange'));
 const CallCenterAgentList = lazy(() => import('./views/agents/CallCenterAgentList'));
+const CallCenterUserList = lazy(() => import('./views/agentUsers/CallCenterUserList'));
 const BasicButton = lazy(() => import('./views/ui-elements/basic/BasicButton'));
 const BasicBadges = lazy(() => import('./views/ui-elements/basic/BasicBadges'));
 const BasicBreadcrumb = lazy(() => import('./views/ui-elements/basic/BasicBreadcrumb'));
@@ -78,6 +79,8 @@ const routes = [
       { path: '/app/dashboard/service', element: Service },
       { path: '/app/dashboard/exchange', element: Exchange },
       { path: '/app/dashboard/call-center-agents', element: CallCenterAgentList },
+      { path: '/app/dashboard/call-center-users', element: CallCenterUserList },
+
       { path: '/basic/button', element: BasicButton },
       { path: '/basic/badges', element: BasicBadges },
       { path: '/basic/breadcrumb-paging', element: BasicBreadcrumb },
