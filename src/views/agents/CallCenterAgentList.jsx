@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Table, Button, Form, Pagination, Modal } from 'react-bootstrap';
-import { fetchAgents as fetchAgentData, createAgent, deleteAgent } from 'api/callAgent'; // ✅ Use your existing API
+import { fetchAgents as fetchAgentData, createAgent, deleteAgent, updateAgent } from 'api/callAgent'; // ✅ Make sure path is correct
 
 const CallCenterAgentList = () => {
   const [agents, setAgents] = useState([]);
@@ -13,8 +13,11 @@ const CallCenterAgentList = () => {
   const [sortBy, setSortBy] = useState('agentName');
   const [sortDirection, setSortDirection] = useState('asc');
 
-  // Create Modal States
+  // Modal States
   const [showForm, setShowForm] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editAgentId, setEditAgentId] = useState(null);
+
   const [formData, setFormData] = useState({
     agentName: '',
     phoneNumber: '',
@@ -60,7 +63,6 @@ const CallCenterAgentList = () => {
     }
   };
 
-  // Form Handlers
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -74,7 +76,7 @@ const CallCenterAgentList = () => {
     try {
       await createAgent(formData);
       setShowForm(false);
-      setFormData({ name: '', phoneNumber: '', language: '', currentCallCount: 0, status: 'OFFLINE' });
+      resetForm();
       fetchAgents();
     } catch (err) {
       console.error('Failed to create agent:', err);
@@ -82,14 +84,41 @@ const CallCenterAgentList = () => {
     }
   };
 
+  const handleEditClick = (agent) => {
+    setFormData({
+      agentName: agent.agentName,
+      phoneNumber: agent.phoneNumber,
+      language: agent.language,
+      currentCallCount: agent.currentCallCount,
+      status: agent.status
+    });
+    setEditAgentId(agent.agentId);
+    setIsEditMode(true);
+    setShowForm(true);
+  };
+
+  const handleUpdateAgent = async (e) => {
+    e.preventDefault();
+    try {
+      await updateAgent(editAgentId, formData);
+      console.log('formData', formData);
+      setShowForm(false);
+      resetForm();
+      fetchAgents();
+    } catch (err) {
+      console.error('Failed to update agent:', err);
+      alert('Update failed.');
+    }
+  };
+
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this agent?')) return;
-  
+
     try {
       const success = await deleteAgent(id);
       if (success) {
         alert('Agent deleted successfully.');
-        fetchAgents(); // Refresh list
+        fetchAgents();
       } else {
         alert('Failed to delete agent.');
       }
@@ -98,7 +127,18 @@ const CallCenterAgentList = () => {
       alert('Error occurred while deleting agent.');
     }
   };
-  
+
+  const resetForm = () => {
+    setFormData({
+      agentName: '',
+      phoneNumber: '',
+      language: '',
+      currentCallCount: 0,
+      status: 'OFFLINE'
+    });
+    setEditAgentId(null);
+    setIsEditMode(false);
+  };
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -110,15 +150,17 @@ const CallCenterAgentList = () => {
       {/* Search & Create */}
       <Row className="mb-3">
         <Col md={8}>
-          <Form.Control
-            type="text"
-            placeholder="Search agents..."
-            value={searchTerm}
-            onChange={handleSearch}
-          />
+          <Form.Control type="text" placeholder="Search agents..." value={searchTerm} onChange={handleSearch} />
         </Col>
         <Col md={4} className="text-end">
-          <Button variant="success" onClick={() => setShowForm(true)}>
+          <Button
+            variant="success"
+            onClick={() => {
+              setIsEditMode(false);
+              resetForm();
+              setShowForm(true);
+            }}
+          >
             + Create New Agent
           </Button>
         </Col>
@@ -128,24 +170,12 @@ const CallCenterAgentList = () => {
       <Table responsive>
         <thead>
           <tr>
-            <th onClick={() => handleSort('agentName')}>
-              Agent Name {sortBy === 'agentName' && (sortDirection === 'asc' ? '↑' : '↓')}
-            </th>
-            <th onClick={() => handleSort('phoneNumber')}>
-              Phone Number {sortBy === 'phoneNumber' && (sortDirection === 'asc' ? '↑' : '↓')}
-            </th>
-            <th onClick={() => handleSort('language')}>
-              Language {sortBy === 'language' && (sortDirection === 'asc' ? '↑' : '↓')}
-            </th>
-            <th onClick={() => handleSort('currentCallCount')}>
-              Current Calls {sortBy === 'currentCallCount' && (sortDirection === 'asc' ? '↑' : '↓')}
-            </th>
-            <th onClick={() => handleSort('lastOnlineAt')}>
-              Last Online {sortBy === 'lastOnlineAt' && (sortDirection === 'asc' ? '↑' : '↓')}
-            </th>
-            <th onClick={() => handleSort('status')}>
-              Status {sortBy === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
-            </th>
+            <th>Agent Name</th>
+            <th>Phone Number</th>
+            <th>Language</th>
+            <th>Current Calls</th>
+            <th>Last Online</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -158,24 +188,20 @@ const CallCenterAgentList = () => {
               <td>{agent.currentCallCount}</td>
               <td>{new Date(agent.lastOnlineAt).toLocaleString()}</td>
               <td>
-                <span className={`badge ${
-                  agent.status === 'ONLINE' ? 'bg-success' :
-                  agent.status === 'OFFLINE' ? 'bg-danger' :
-                  agent.status === 'BUSY' ? 'bg-warning' :
-                  'bg-secondary'
-                }`}>
+                <span
+                  className={`badge ${
+                    agent.status === 'AVAILABLE' ? 'bg-success' : agent.status === 'OFFLINE' ? 'bg-danger' : 'bg-warning'
+                  }`}
+                >
                   {agent.status}
                 </span>
               </td>
               <td>
-                <Button variant="info" size="sm" className="me-2">
-                  <i className="feather icon-edit" /> Edit
+                <Button variant="info" size="sm" className="me-2" onClick={() => handleEditClick(agent)}>
+                  Edit
                 </Button>
-                {/* <Button variant="danger" size="sm" onClick={handleDelete}>
-                  <i className="feather icon-trash-2" /> Delete
-                </Button> */}
-                <Button variant="danger" size="sm" onClick={() => handleDelete(agent.id)}>
-                  <i className="feather icon-trash-2" /> Delete
+                <Button variant="danger" size="sm" onClick={() => handleDelete(agent.agentId)}>
+                  Delete
                 </Button>
               </td>
             </tr>
@@ -190,11 +216,7 @@ const CallCenterAgentList = () => {
             <Pagination.First onClick={() => handlePageChange(0)} disabled={currentPage === 0} />
             <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 0} />
             {Array.from({ length: totalPages }, (_, i) => (
-              <Pagination.Item
-                key={i}
-                active={i === currentPage}
-                onClick={() => handlePageChange(i)}
-              >
+              <Pagination.Item key={i} active={i === currentPage} onClick={() => handlePageChange(i)}>
                 {i + 1}
               </Pagination.Item>
             ))}
@@ -204,16 +226,16 @@ const CallCenterAgentList = () => {
         </Col>
       </Row>
 
-      {/* Create Agent Modal */}
+      {/* Create/Edit Agent Modal */}
       <Modal show={showForm} onHide={() => setShowForm(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Create New Agent</Modal.Title>
+          <Modal.Title>{isEditMode ? 'Edit Agent' : 'Create New Agent'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form onSubmit={handleCreateAgent}>
+          <Form onSubmit={isEditMode ? handleUpdateAgent : handleCreateAgent}>
             <Form.Group className="mb-3">
               <Form.Label>Agent Name</Form.Label>
-              <Form.Control type="text" name="name" value={formData.name} onChange={handleFormChange} required />
+              <Form.Control type="text" name="agentName" value={formData.agentName} onChange={handleFormChange} required />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Phone Number</Form.Label>
@@ -230,14 +252,18 @@ const CallCenterAgentList = () => {
             <Form.Group className="mb-3">
               <Form.Label>Status</Form.Label>
               <Form.Select name="status" value={formData.status} onChange={handleFormChange}>
-                <option value="ONLINE">ONLINE</option>
-                <option value="OFFLINE">OFFLINE</option>
+                <option value="AVAILABLE">AVAILABLE</option>
                 <option value="BUSY">BUSY</option>
+                <option value="OFFLINE">OFFLINE</option>
               </Form.Select>
             </Form.Group>
             <div className="text-end">
-              <Button variant="secondary" onClick={() => setShowForm(false)} className="me-2">Cancel</Button>
-              <Button type="submit" variant="primary">Create</Button>
+              <Button variant="secondary" onClick={() => setShowForm(false)} className="me-2">
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary">
+                {isEditMode ? 'Update' : 'Create'}
+              </Button>
             </div>
           </Form>
         </Modal.Body>
