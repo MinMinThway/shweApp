@@ -3,6 +3,11 @@ import { Row, Col, Button, Spinner, Alert, Form, Modal } from 'react-bootstrap';
 import Card from '../../components/Card/MainCard';
 import { fetchContents, createContent, deleteContent, updateContent } from '../../api/ContentApi';
 
+const CONTENT_TYPES = {
+  INF: 'INF',
+  TRA: 'TRA'
+};
+
 const Artical = () => {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,19 +18,21 @@ const Artical = () => {
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 5;
 
+  const [filterContentType, setFilterContentType] = useState(CONTENT_TYPES.INF); // ✅ filter state
   const [showModal, setShowModal] = useState(false);
   const [formTitle, setFormTitle] = useState('');
   const [formBody, setFormBody] = useState('');
   const [formImages, setFormImages] = useState([]);
+  const [formContentType, setFormContentType] = useState(CONTENT_TYPES.INF); // ✅ form state
   const [existingImages, setExistingImages] = useState([]);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
   const [editId, setEditId] = useState(null);
 
-  const loadNews = async (pageNumber = 0, search = '') => {
+  const loadNews = async (pageNumber = 0, search = '', type = filterContentType) => {
     setLoading(true);
     try {
-      const data = await fetchContents('INF', search, pageNumber, pageSize);
+      const data = await fetchContents(type, search, pageNumber, pageSize);
       setNews(data.content || []);
       setTotalPages(data.totalPages || 1);
       setError(null);
@@ -39,28 +46,34 @@ const Artical = () => {
   };
 
   useEffect(() => {
-    loadNews(page, searchString);
+    loadNews(page, searchString, filterContentType);
   }, []);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchString(value);
-    loadNews(0, value);
+    loadNews(0, value, filterContentType);
+  };
+
+  const handleContentTypeChange = (e) => {
+    const type = e.target.value;
+    setFilterContentType(type);
+    loadNews(0, searchString, type);
   };
 
   const handlePrev = () => {
-    if (page > 0) loadNews(page - 1, searchString);
+    if (page > 0) loadNews(page - 1, searchString, filterContentType);
   };
 
   const handleNext = () => {
-    if (page < totalPages - 1) loadNews(page + 1, searchString);
+    if (page < totalPages - 1) loadNews(page + 1, searchString, filterContentType);
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this content?')) return;
     try {
       await deleteContent(id);
-      loadNews(0, searchString);
+      loadNews(0, searchString, filterContentType);
     } catch (err) {
       alert('Failed to delete content');
       console.error(err);
@@ -73,11 +86,13 @@ const Artical = () => {
       setFormTitle(item.title);
       setFormBody(item.body);
       setExistingImages(item.images || []);
+      setFormContentType(item.contentType || CONTENT_TYPES.INF);
     } else {
       setEditId(null);
       setFormTitle('');
       setFormBody('');
       setExistingImages([]);
+      setFormContentType(CONTENT_TYPES.INF);
     }
     setFormImages([]);
     setFormError(null);
@@ -102,7 +117,7 @@ const Artical = () => {
       const payload = {
         title: formTitle,
         body: formBody,
-        contentType: 'INF',
+        contentType: formContentType,
         imageFiles: formImages
       };
 
@@ -113,7 +128,7 @@ const Artical = () => {
       }
 
       closeModal();
-      loadNews(0, searchString);
+      loadNews(0, searchString, filterContentType);
     } catch (err) {
       setFormError(editId ? 'Failed to update content' : 'Failed to create content');
       console.error(err);
@@ -124,19 +139,26 @@ const Artical = () => {
 
   return (
     <>
-      <Row className="mb-3">
-        <Col md={6}>
+      <Row className="mb-3 align-items-center">
+        <Col md={3}>
+          <Form.Select value={filterContentType} onChange={handleContentTypeChange}>
+            <option value={CONTENT_TYPES.INF}>INF (Information)</option>
+            <option value={CONTENT_TYPES.TRA}>TRA (Travel)</option>
+          </Form.Select>
+        </Col>
+        <Col md={5}>
           <Form.Control type="text" placeholder="Search content..." value={searchString} onChange={handleSearchChange} />
         </Col>
-        <Col md={6} className="text-end">
-          <Button variant="primary" className="w-25" onClick={() => openModal()}>
+        <Col md={4} className="text-end">
+          <Button variant="primary" onClick={() => openModal()}>
             Add New
           </Button>
         </Col>
       </Row>
 
       <Row>
-        {news.length === 0 && <p>No content found.</p>}
+        {loading && <Spinner animation="border" />}
+        {!loading && news.length === 0 && <p>No content found.</p>}
         {news.map((item, index) => (
           <Col key={index} md={6} lg={4} className="mb-4">
             <Card title={item.title || 'No Title'} isOption>
@@ -195,6 +217,18 @@ const Artical = () => {
                 onChange={(e) => setFormTitle(e.target.value)}
                 required
               />
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="contentType">
+              <Form.Label>Content Type <span className="text-danger">*</span></Form.Label>
+              <Form.Select
+                value={formContentType}
+                onChange={(e) => setFormContentType(e.target.value)}
+                required
+              >
+                <option value={CONTENT_TYPES.INF}>INF (Information)</option>
+                <option value={CONTENT_TYPES.TRA}>TRA (Training)</option>
+              </Form.Select>
             </Form.Group>
 
             <Form.Group className="mb-3" controlId="contentBody">
