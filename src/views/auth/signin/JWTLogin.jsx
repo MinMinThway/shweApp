@@ -4,52 +4,53 @@ import * as Yup from 'yup';
 import { Formik } from 'formik';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
+import { useAuth } from '../../../../AuthContext';
 const JWTLogin = () => {
   const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const { setUser, setToken } = useAuth();
   const handleSubmit = async (values, { setErrors, setStatus, setSubmitting }) => {
     try {
       const url = `${API_BASE_URL}api/v1/auth/login`;
-      console.log("Login POST URL:", url);
-  
+      console.log('Login POST URL:', url);
+
       const response = await axios.post(url, {
         phoneNumber: values.phoneNumber,
         password: values.password
       });
-  
-      console.log("Login response:", response.data);
-  
+
+      console.log('Login response:', response.data);
+
       const { token, refreshToken, user } = response.data;
-  
+
       localStorage.setItem('accessToken', token);
       localStorage.setItem('refreshToken', refreshToken);
       localStorage.setItem('user', JSON.stringify(user));
-  
+      setToken(token);
+      setUser(user);
       setStatus({ success: true });
       setSubmitting(false);
-  
-      navigate('/');
+
+      navigate('/app/dashboard/default');
     } catch (err) {
-      console.error("Login error:", err);
-  
+      console.error('Login error:', err);
+
       // More detailed error logging
       if (err.response) {
-        console.error("Response data:", err.response.data);
-        console.error("Response status:", err.response.status);
-        console.error("Response headers:", err.response.headers);
+        console.error('Response data:', err.response.data);
+        console.error('Response status:', err.response.status);
+        console.error('Response headers:', err.response.headers);
       } else if (err.request) {
-        console.error("No response received, request made:", err.request);
+        console.error('No response received, request made:', err.request);
       } else {
-        console.error("Error setting up request:", err.message);
+        console.error('Error setting up request:', err.message);
       }
-  
+
       setStatus({ success: false });
       setErrors({ submit: err.response?.data || 'Login failed' });
       setSubmitting(false);
     }
   };
-  
 
   return (
     <Formik
@@ -76,9 +77,7 @@ const JWTLogin = () => {
               type="text"
               value={values.phoneNumber}
             />
-            {touched.phoneNumber && errors.phoneNumber && (
-              <small className="text-danger">{errors.phoneNumber}</small>
-            )}
+            {touched.phoneNumber && errors.phoneNumber && <small className="text-danger">{errors.phoneNumber}</small>}
           </div>
           <div className="form-group mb-4">
             <input
@@ -90,9 +89,7 @@ const JWTLogin = () => {
               type="password"
               value={values.password}
             />
-            {touched.password && errors.password && (
-              <small className="text-danger">{errors.password}</small>
-            )}
+            {touched.password && errors.password && <small className="text-danger">{errors.password}</small>}
           </div>
 
           {errors.submit && (
