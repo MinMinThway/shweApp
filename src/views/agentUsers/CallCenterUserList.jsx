@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Table, Button, Form, Pagination, Modal, Alert } from 'react-bootstrap';
-import { fetchCallCenterUsers, createCallCenterUser, updateCallCenterUser, deleteCallCenterUser } from 'api/callAgent';
+import { Row, Col, Table, Button, Form, Pagination, Modal } from 'react-bootstrap';
+import { fetchCallCenterUsers, createCallCenterUser, updateCallCenterUser, deleteCallCenterUser } from 'api/callUser';
 
 const CallCenterUserList = () => {
   const [users, setUsers] = useState([]);
@@ -10,9 +10,14 @@ const CallCenterUserList = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
-
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ userId: '', userName: '', phoneNumber: '', remainingBalance: '', serviceStatus: 'ACTIVE' });
+  const [formData, setFormData] = useState({
+    userId: '',
+    userName: '',
+    phoneNumber: '',
+    remainingBalance: '',
+    serviceStatus: 'ACTIVE'
+  });
   const [editingUser, setEditingUser] = useState(null);
 
   const fetchUsers = async () => {
@@ -55,20 +60,26 @@ const CallCenterUserList = () => {
         phoneNumber: formData.phoneNumber,
         userName: formData.userName,
         remainingBalance: parseFloat(formData.remainingBalance),
-        serviceStatus: formData.serviceStatus,
+        serviceStatus: formData.serviceStatus
       };
 
       if (editingUser) {
         await updateCallCenterUser(editingUser.userId, payload);
         alert('User updated successfully.');
       } else {
-        payload.userId = formData.userId;
+        payload.userId = parseInt(formData.userId);
         await createCallCenterUser(payload);
         alert('User created successfully.');
       }
       setShowForm(false);
       setEditingUser(null);
-      setFormData({ userId: '', userName: '', phoneNumber: '', remainingBalance: '', serviceStatus: 'ACTIVE' });
+      setFormData({
+        userId: '',
+        userName: '',
+        phoneNumber: '',
+        remainingBalance: '',
+        serviceStatus: 'ACTIVE'
+      });
       fetchUsers();
     } catch (err) {
       console.error('Failed to submit user:', err);
@@ -83,24 +94,19 @@ const CallCenterUserList = () => {
       userName: user.userName,
       phoneNumber: user.phoneNumber,
       remainingBalance: user.remainingBalance,
-      serviceStatus: user.serviceStatus,
+      serviceStatus: user.serviceStatus
     });
     setShowForm(true);
   };
 
   const handleDelete = async (userId) => {
     if (!window.confirm('Are you sure you want to delete this user?')) return;
-    try {
-      const success = await deleteCallCenterUser(userId);
-      if (success) {
-        alert('User deleted successfully.');
-        fetchUsers();
-      } else {
-        alert('Failed to delete user.');
-      }
-    } catch (err) {
-      console.error('Error deleting user:', err);
-      alert('Error occurred while deleting user.');
+    const success = await deleteCallCenterUser(userId);
+    if (success) {
+      alert('User deactivated successfully.');
+      fetchUsers();
+    } else {
+      alert('Failed to deactivate user.');
     }
   };
 
@@ -113,15 +119,23 @@ const CallCenterUserList = () => {
 
       <Row className="mb-3">
         <Col md={8}>
-          <Form.Control
-            type="text"
-            placeholder="Search users..."
-            value={searchTerm}
-            onChange={handleSearch}
-          />
+          <Form.Control type="text" placeholder="Search users..." value={searchTerm} onChange={handleSearch} />
         </Col>
         <Col md={4} className="text-end">
-          <Button variant="success" onClick={() => { setShowForm(true); setEditingUser(null); setFormData({ userId: '', userName: '', phoneNumber: '', remainingBalance: '', serviceStatus: 'ACTIVE' }); }}>
+          <Button
+            variant="success"
+            onClick={() => {
+              setShowForm(true);
+              setEditingUser(null);
+              setFormData({
+                userId: '',
+                userName: '',
+                phoneNumber: '',
+                remainingBalance: '',
+                serviceStatus: 'ACTIVE'
+              });
+            }}
+          >
             + Create New User
           </Button>
         </Col>
@@ -146,11 +160,11 @@ const CallCenterUserList = () => {
               <td>{user.phoneNumber}</td>
               <td>{user.remainingBalance?.toFixed(2)}</td>
               <td>
-                <span className={`badge ${
-                  user.serviceStatus === 'ACTIVE' ? 'bg-success' :
-                  user.serviceStatus === 'SUSPENDED' ? 'bg-warning' :
-                  'bg-secondary'
-                }`}>
+                <span
+                  className={`badge ${
+                    user.serviceStatus === 'ACTIVE' ? 'bg-success' : user.serviceStatus === 'LOW_BALANCE' ? 'bg-warning' : 'bg-secondary'
+                  }`}
+                >
                   {user.serviceStatus}
                 </span>
               </td>
@@ -173,11 +187,7 @@ const CallCenterUserList = () => {
             <Pagination.First onClick={() => handlePageChange(0)} disabled={currentPage === 0} />
             <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 0} />
             {Array.from({ length: totalPages }, (_, i) => (
-              <Pagination.Item
-                key={i}
-                active={i === currentPage}
-                onClick={() => handlePageChange(i)}
-              >
+              <Pagination.Item key={i} active={i === currentPage} onClick={() => handlePageChange(i)}>
                 {i + 1}
               </Pagination.Item>
             ))}
@@ -196,7 +206,7 @@ const CallCenterUserList = () => {
             {!editingUser && (
               <Form.Group className="mb-3">
                 <Form.Label>User ID</Form.Label>
-                <Form.Control type="text" name="userId" value={formData.userId} onChange={handleFormChange} required />
+                <Form.Control type="number" name="userId" value={formData.userId} onChange={handleFormChange} required />
               </Form.Group>
             )}
             <Form.Group className="mb-3">
@@ -209,19 +219,30 @@ const CallCenterUserList = () => {
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Remaining Balance</Form.Label>
-              <Form.Control type="number" step="0.01" name="remainingBalance" value={formData.remainingBalance} onChange={handleFormChange} required />
+              <Form.Control
+                type="number"
+                step="0.01"
+                name="remainingBalance"
+                value={formData.remainingBalance}
+                onChange={handleFormChange}
+                required
+              />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Service Status</Form.Label>
               <Form.Select name="serviceStatus" value={formData.serviceStatus} onChange={handleFormChange}>
                 <option value="ACTIVE">ACTIVE</option>
-                <option value="SUSPENDED">SUSPENDED</option>
-                <option value="INACTIVE">INACTIVE</option>
+                <option value="NOT_ACTIVE">NOT_ACTIVE</option>
+                <option value="LOW_BALANCE">LOW_BALANCE</option>
               </Form.Select>
             </Form.Group>
             <div className="text-end">
-              <Button variant="secondary" onClick={() => setShowForm(false)} className="me-2">Cancel</Button>
-              <Button type="submit" variant="primary">{editingUser ? 'Update' : 'Create'}</Button>
+              <Button variant="secondary" onClick={() => setShowForm(false)} className="me-2">
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary">
+                {editingUser ? 'Update' : 'Create'}
+              </Button>
             </div>
           </Form>
         </Modal.Body>

@@ -156,10 +156,7 @@ const BootstrapTable = () => {
                   ) : (
                     users.map((user, index) => (
                       <tr key={user.id || index}>
-                        <td>
-                          {user.userName}
-                          {user.id}
-                        </td>
+                        <td>{user.userName}</td>
                         <td>{user.phoneNumber}</td>
                         <td>{user.status}</td>
                         <td>{user.image ? <img src={user.image} alt="User" width={40} /> : <span>No image</span>}</td>
