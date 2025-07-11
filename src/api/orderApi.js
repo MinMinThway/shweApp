@@ -58,6 +58,20 @@ export const finishOrder = async (orderId, newNinetyDaysReportImage) => {
   return response.data;
 };
 
+export const finishOrderED = async (orderId, newNinetyDaysReportImage) => {
+  const formData = new FormData();
+  formData.append('orderId', orderId);
+  formData.append('eVisaUrl', newNinetyDaysReportImage);
+
+  const response = await axios.post(`${API_BASE_URL}api/v1/order/finish-edvisa`, formData, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+  return response.data;
+};
+
 // Mark order as incomplete/uncompleted
 export const markOrderAsIncomplete = async (orderId, rejectNotes) => {
   const params = new URLSearchParams();
