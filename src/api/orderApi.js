@@ -71,6 +71,35 @@ export const finishOrderED = async (orderId, newNinetyDaysReportImage) => {
   });
   return response.data;
 };
+// Finish DTV Visa Order
+export const finishOrderDTVVisa = async (orderId, eVisaUrl) => {
+  const formData = new FormData();
+  formData.append('orderId', orderId);
+  formData.append('eVisaUrl', eVisaUrl);
+
+  const response = await axios.post(`${API_BASE_URL}api/v1/order/finish-dtvvisa`, formData, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+  return response.data;
+};
+
+// Finish Embassy Letter Order
+export const finishOrderEmbassyLetter = async (orderId, embassyLetterUrl) => {
+  const formData = new FormData();
+  formData.append('orderId', orderId);
+  formData.append('embassyLetterUrl', embassyLetterUrl);
+
+  const response = await axios.post(`${API_BASE_URL}api/v1/order/finish-embassy-letter`, formData, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+  return response.data;
+};
 
 // Mark order as incomplete/uncompleted
 export const markOrderAsIncomplete = async (orderId, rejectNotes) => {

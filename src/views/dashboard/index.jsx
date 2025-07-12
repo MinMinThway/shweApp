@@ -73,6 +73,7 @@ const DashDefault = () => {
   const handleRowClick = async (orderId) => {
     try {
       const order = await fetchOrderById(orderId);
+      console.log(order.orderType);
       setSelectedOrder(order);
       setSelectedStatus(order.orderStatus || order.status);
       setRejectNotes('');
