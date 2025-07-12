@@ -56,11 +56,18 @@ const menuItems = {
           url: '/app/dashboard/call-center-agents'
         },
         {
-          id: 'call-center-users',
-          title: 'Call Center Users',
+          id: 'doctors',
+          title: 'Doctors',
           type: 'item',
           icon: 'feather icon-user-check',
-          url: '/app/dashboard/call-center-users'
+          url: '/app/dashboard/doctors'
+        },
+       {
+          id: 'patients',
+          title: 'Patients',
+          type: 'item',
+          icon: 'feather icon-user-check',
+          url: '/app/dashboard/patients'
         },
         {
           id: 'logout',
