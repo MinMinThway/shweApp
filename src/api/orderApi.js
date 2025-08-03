@@ -101,6 +101,20 @@ export const finishOrderEmbassyLetter = async (orderId, embassyLetterUrl) => {
   return response.data;
 };
 
+export const finishCiVisa = async (orderId, embassyLetterUrl) => {
+  const formData = new FormData();
+  formData.append('orderId', orderId);
+  formData.append('approvalFile', embassyLetterUrl);
+
+  const response = await axios.post(`${API_BASE_URL}api/v1/order/finish-ci-visa`, formData, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+  return response.data;
+};
+
 // Mark order as incomplete/uncompleted
 export const markOrderAsIncomplete = async (orderId, rejectNotes) => {
   const params = new URLSearchParams();
